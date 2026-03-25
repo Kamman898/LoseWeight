@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <title>情侣健康记录</title>
+    <style>
+        /* CSS 变量：支持明暗模式与iOS色彩系统 */
+        :root {
+            --bg-color: #F2F2F7;
+            --text-primary: #000000;
+            --text-secondary: #8E8E93;
+            --card-bg: rgba(255, 255, 255, 0.65);
+            --card-border: rgba(255, 255, 255, 0.4);
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+            --blur: blur(30px);
+            --modal-bg: rgba(255, 255, 255, 0.85);
+
+            --gradient-boy: linear-gradient(135deg, #00C6FF 0%, #0072FF 100%);
+            --gradient-girl: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
+            --gradient-shared: linear-gradient(135deg, #38ef7d 0%, #11998e 100%);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #000000;
+                --text-primary: #FFFFFF;
+                --text-secondary: #EBEBF599;
+                --card-bg: rgba(28, 28, 30, 0.5);
+                --card-border: rgba(255, 255, 255, 0.1);
+                --shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                --modal-bg: rgba(28, 28, 30, 0.85);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            padding: 20px 20px 60px 20px;
+            transition: background-color 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        /* 顶部标题区 */
+        header {
+            margin-top: 40px;
+            margin-bottom: 24px;
+        }
+
+        .date {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        /* 针对较长标题进行了字号自适应，调整为 24px 确保同行显示 */
+        h1 {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .avatar-group {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .avatar-group div {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            border-radius: 50%;
+            border: 3px solid var(--bg-color);
+        }
+
+        /* 卡片通用样式 */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border: 1px solid var(--card-border);
+            border-radius: 28px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 共享目标卡片 */
+        .shared-goal {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .shared-info h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .shared-info p {
+            font-size: 15px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .highlight-text {
+            background: var(--gradient-shared);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        /* 个人详情卡片 (增强了点击交互的样式) */
+        .person-card {
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
+        }
+
+        .person-card:active {
+            transform: scale(0.95);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .person-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .person-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            margin-right: 16px;
+        }
+
+        .bg-boy {
+            background: var(--gradient-boy);
+        }
+
+        .bg-girl {
+            background: var(--gradient-girl);
+        }
+
+        .person-name {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        /* 指引图标 */
+        .chevron-right {
+            margin-left: auto;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 16px;
+            opacity: 0.5;
+        }
+
+        .person-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .stat-block {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            display: flex;
+            align-items: baseline;
+        }
+
+        .stat-unit {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-left: 4px;
+        }
+
+        /* 环形进度条 */
+        .progress-ring {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .progress-ring svg {
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring circle {
+            fill: none;
+            stroke-width: 8;
+            stroke-linecap: round;
+        }
+
+        .progress-ring .track {
+            stroke: rgba(142, 142, 147, 0.2);
+        }
+
+        .progress-ring .progress {
+            stroke-dasharray: 201;
+            stroke-dashoffset: 201;
+            transition: stroke-dashoffset 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .boy-progress {
+            stroke: #0072FF;
+        }
+
+        .girl-progress {
+            stroke: #FF512F;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        /* 底部提示文字 */
+        .tip-text {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-top: 10px;
+            opacity: 0.7;
+        }
+
+        /* 底部弹窗 Modal (iOS Bottom Sheet 风格) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-sheet {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--modal-bg);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-radius: 32px 32px 0 0;
+            padding: 24px 24px 50px 24px;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-overlay.show .modal-sheet {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-header button {
+            background: none;
+            border: none;
+            font-size: 17px;
+            font-weight: 600;
+            color: #007AFF;
+            cursor: pointer;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* 输入框区域 */
+        .input-area {
+            display: flex;
+            justify-content: center;
+            align-items: baseline;
+            margin-bottom: 20px;
+        }
+
+        .input-area input {
+            width: 160px;
+            font-size: 50px;
+            font-weight: 800;
+            text-align: center;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            outline: none;
+            letter-spacing: -1px;
+        }
+
+        .input-area .unit {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-left: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="date" id="current-date">日期加载中...</div>
+        <h1>
+            我们的的减肥日记
+            <div class="avatar-group">
+                <div style="background: var(--gradient-boy); width: 32px; height: 32px; z-index:2;">👦🏻</div>
+                <div style="background: var(--gradient-girl); width: 32px; height: 32px; margin-left:-12px; z-index:1;">
+                    👧🏻</div>
+            </div>
+        </h1>
+    </header>
+
+    <!-- 共享进度概览 -->
+    <div class="card shared-goal">
+        <div class="shared-info">
+            <h3>情侣减脂挑战</h3>
+            <p>目标共计减重 <span id="total-goal-text" style="color:var(--text-primary); font-weight:700;">--kg</span></p>
+        </div>
+        <div class="highlight-text" id="total-lost-text">-0.00kg</div>
+    </div>
+
+    <!-- 男生数据卡片 (点击呼出弹窗编辑大笨熊体重) -->
+    <div class="card person-card" onclick="openModalFor('boy')">
+        <div class="person-header">
+            <div class="person-icon bg-boy">👦🏻</div>
+            <div class="person-name">小甘</div>
+            <div class="chevron-right">编辑 〉</div>
+        </div>
+        <div class="person-stats">
+            <div class="stat-block">
+                <div class="stat-label">当前体重</div>
+                <div class="stat-value"><span id="boy-current-weight">--</span> <span class="stat-unit">kg</span></div>
+                <div class="stat-label" style="margin-top: 8px;">目标: <span id="boy-target-weight">--</span> kg</div>
+            </div>
+            <div class="progress-ring">
+                <svg width="80" height="80" viewBox="0 0 80 80">
+                    <circle class="track" cx="40" cy="40" r="32"></circle>
+                    <circle class="progress boy-progress" id="boy-circle" cx="40" cy="40" r="32"></circle>
+                </svg>
+                <div class="progress-text" id="boy-percent-text" style="color: #0072FF;">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 女生数据卡片 (点击呼出弹窗编辑小仙女体重) -->
+    <div class="card person-card" onclick="openModalFor('girl')">
+        <div class="person-header">
+            <div class="person-icon bg-girl">👧🏻</div>
+            <div class="person-name">小王</div>
+            <div class="chevron-right">编辑 〉</div>
+        </div>
+        <div class="person-stats">
+            <div class="stat-block">
+                <div class="stat-label">当前体重</div>
+                <div class="stat-value"><span id="girl-current-weight">--</span> <span class="stat-unit">kg</span></div>
+                <div class="stat-label" style="margin-top: 8px;">目标: <span id="girl-target-weight">--</span> kg</div>
+            </div>
+            <div class="progress-ring">
+                <svg width="80" height="80" viewBox="0 0 80 80">
+                    <circle class="track" cx="40" cy="40" r="32"></circle>
+                    <circle class="progress girl-progress" id="girl-circle" cx="40" cy="40" r="32"></circle>
+                </svg>
+                <div class="progress-text" id="girl-percent-text" style="color: #FF512F;">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示文本 -->
+    <div class="tip-text">点击上方卡片即可记录体重</div>
+
+    <!-- iOS 底层专属定制弹窗 -->
+    <div class="modal-overlay" id="weightModal">
+        <div class="modal-sheet" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <button onclick="closeModal()" style="color: var(--text-secondary);">取消</button>
+                <div class="modal-title" id="modal-title">更新体重</div>
+                <button onclick="saveWeight()" style="font-weight: 700;">保存</button>
+            </div>
+
+            <!-- 移除了分段选择器，直接显示输入框 -->
+            <div class="input-area">
+                <input type="number" id="weightInput" inputmode="decimal" step="0.01" placeholder="0.00">
+                <span class="unit">kg</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 核心数据配置 ---
+        const defaultData = {
+            boy: { startWeight: 71.00, targetWeight: 65.51, currentWeight: 71.00 },
+            girl: { startWeight: 59.00, targetWeight: 54.44, currentWeight: 59.00 }
+        };
+
+        let appData = JSON.parse(localStorage.getItem('coupleHealthData_v2')) || defaultData;
+        let selectedUser = 'boy'; // 用于标记当前打开弹窗的是谁
+
+        // 格式化函数：如果有两位小数则显示两位，如果只有一位则显示一位
+        function formatWeight(val) {
+            let num = parseFloat(val);
+            if (Number.isInteger(num)) return num.toFixed(1);
+            return num.toFixed(2).replace(/0$/, '');
+        }
+
+        // --- 初始化应用 ---
+        window.onload = () => {
+            setCurrentDate();
+            renderUI();
+
+            // 点击遮罩层关闭弹窗
+            document.getElementById('weightModal').addEventListener('click', closeModal);
+        };
+
+        function setCurrentDate() {
+            const now = new Date();
+            const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            document.getElementById('current-date').textContent =
+                `${now.getMonth() + 1}月${now.getDate()}日 ${days[now.getDay()]}`;
+        }
+
+        // --- 核心更新逻辑 ---
+        function renderUI() {
+            const boy = appData.boy;
+            const girl = appData.girl;
+
+            document.getElementById('boy-current-weight').textContent = formatWeight(boy.currentWeight);
+            document.getElementById('boy-target-weight').textContent = formatWeight(boy.targetWeight);
+            document.getElementById('girl-current-weight').textContent = formatWeight(girl.currentWeight);
+            document.getElementById('girl-target-weight').textContent = formatWeight(girl.targetWeight);
+
+            // 计算进度百分比
+            const boyPercent = calculatePercent(boy);
+            const girlPercent = calculatePercent(girl);
+
+            document.getElementById('boy-percent-text').textContent = boyPercent + '%';
+            document.getElementById('girl-percent-text').textContent = girlPercent + '%';
+
+            // 更新圆环动画
+            updateRing('boy-circle', boyPercent);
+            updateRing('girl-circle', girlPercent);
+
+            // 更新顶部共享进度
+            const totalGoal = (boy.startWeight - boy.targetWeight) + (girl.startWeight - girl.targetWeight);
+            const totalLost = (boy.startWeight - boy.currentWeight) + (girl.startWeight - girl.currentWeight);
+
+            document.getElementById('total-goal-text').textContent = formatWeight(totalGoal) + 'kg';
+
+            if (totalLost > 0) {
+                document.getElementById('total-lost-text').textContent = '-' + formatWeight(totalLost) + 'kg';
+            } else {
+                document.getElementById('total-lost-text').textContent = '0.0kg';
+            }
+
+            // 数据持久化保存
+            localStorage.setItem('coupleHealthData_v2', JSON.stringify(appData));
+        }
+
+        function calculatePercent(user) {
+            const totalToLose = user.startWeight - user.targetWeight;
+            const lost = user.startWeight - user.currentWeight;
+            if (totalToLose <= 0) return 100;
+            let percent = Math.round((lost / totalToLose) * 100);
+            return Math.max(0, Math.min(100, percent));
+        }
+
+        function updateRing(elementId, percent) {
+            const circle = document.getElementById(elementId);
+            const circumference = 201;
+            const offset = circumference - (percent / 100) * circumference;
+            setTimeout(() => {
+                circle.style.strokeDashoffset = offset;
+            }, 50);
+        }
+
+        // --- 弹窗交互逻辑 ---
+
+        // 专属唤起：点击不同卡片，弹窗标题和输入框内容自动定制
+        function openModalFor(user) {
+            selectedUser = user;
+
+            // 动态修改弹窗标题
+            const modalTitle = document.getElementById('modal-title');
+            if (user === 'boy') {
+                modalTitle.textContent = '👦🏻 更新大笨熊的体重';
+            } else {
+                modalTitle.textContent = '👧🏻 更新小仙女的体重';
+            }
+
+            // 填入对应用户的当前体重
+            document.getElementById('weightInput').value = formatWeight(appData[user].currentWeight);
+
+            // 展示弹窗
+            document.getElementById('weightModal').classList.add('show');
+
+            // 自动聚焦输入框方便手机端唤起数字键盘
+            setTimeout(() => { document.getElementById('weightInput').focus(); }, 100);
+        }
+
+        function closeModal() {
+            document.getElementById('weightModal').classList.remove('show');
+            document.getElementById('weightInput').blur();
+        }
+
+        function saveWeight() {
+            const inputVal = parseFloat(document.getElementById('weightInput').value);
+
+            if (isNaN(inputVal) || inputVal <= 0 || inputVal > 300) {
+                alert('请输入有效体重数据哦！');
+                return;
+            }
+
+            // 直接更新当前选中成员的“目前体重”
+            appData[selectedUser].currentWeight = inputVal;
+
+            closeModal();
+            // 延迟重绘画 UI，匹配弹窗收起的优雅动画
+            setTimeout(() => {
+                renderUI();
+            }, 300);
+        }
+    </script>
+</body>
+
+</html>
