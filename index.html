@@ -365,7 +365,7 @@
     <header>
         <div class="date" id="current-date">日期加载中...</div>
         <h1>
-            我们的的减肥日记
+            我们的减肥日记
             <div class="avatar-group">
                 <div style="background: var(--gradient-boy); width: 32px; height: 32px; z-index:2;">👦🏻</div>
                 <div style="background: var(--gradient-girl); width: 32px; height: 32px; margin-left:-12px; z-index:1;">
@@ -383,7 +383,7 @@
         <div class="highlight-text" id="total-lost-text">-0.00kg</div>
     </div>
 
-    <!-- 男生数据卡片 (点击呼出弹窗编辑大笨熊体重) -->
+    <!-- 男生数据卡片 (点击呼出弹窗编辑小甘体重) -->
     <div class="card person-card" onclick="openModalFor('boy')">
         <div class="person-header">
             <div class="person-icon bg-boy">👦🏻</div>
@@ -406,7 +406,7 @@
         </div>
     </div>
 
-    <!-- 女生数据卡片 (点击呼出弹窗编辑小仙女体重) -->
+    <!-- 女生数据卡片 (点击呼出弹窗编辑小王体重) -->
     <div class="card person-card" onclick="openModalFor('girl')">
         <div class="person-header">
             <div class="person-icon bg-girl">👧🏻</div>
@@ -452,11 +452,13 @@
     <script>
         // --- 核心数据配置 ---
         const defaultData = {
-            boy: { startWeight: 71.00, targetWeight: 65.51, currentWeight: 71.00 },
-            girl: { startWeight: 59.00, targetWeight: 54.44, currentWeight: 59.00 }
+            // 将小甘(boy)和小王(girl)的当前默认体重更新为了 67.90 和 55.75
+            boy: { startWeight: 71.00, targetWeight: 65.51, currentWeight: 67.90 },
+            girl: { startWeight: 59.00, targetWeight: 54.44, currentWeight: 55.75 }
         };
 
-        let appData = JSON.parse(localStorage.getItem('coupleHealthData_v2')) || defaultData;
+        // 升级了本地缓存到 v3 避免受旧数据影响
+        let appData = JSON.parse(localStorage.getItem('coupleHealthData_v3')) || defaultData;
         let selectedUser = 'boy'; // 用于标记当前打开弹窗的是谁
 
         // 格式化函数：如果有两位小数则显示两位，如果只有一位则显示一位
@@ -516,7 +518,7 @@
             }
 
             // 数据持久化保存
-            localStorage.setItem('coupleHealthData_v2', JSON.stringify(appData));
+            localStorage.setItem('coupleHealthData_v3', JSON.stringify(appData));
         }
 
         function calculatePercent(user) {
@@ -545,9 +547,9 @@
             // 动态修改弹窗标题
             const modalTitle = document.getElementById('modal-title');
             if (user === 'boy') {
-                modalTitle.textContent = '👦🏻 更新大笨熊的体重';
+                modalTitle.textContent = '👦🏻 更新小甘的体重';
             } else {
-                modalTitle.textContent = '👧🏻 更新小仙女的体重';
+                modalTitle.textContent = '👧🏻 更新小王的体重';
             }
 
             // 填入对应用户的当前体重
