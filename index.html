@@ -6,6 +6,8 @@
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <title>情侣健康记录</title>
+    <!-- 引入强大的 Chart.js 图表库 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* CSS 变量：支持明暗模式与iOS色彩系统 */
         :root {
@@ -17,6 +19,7 @@
             --shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
             --blur: blur(30px);
             --modal-bg: rgba(255, 255, 255, 0.85);
+            --segment-bg: rgba(118, 118, 128, 0.12);
 
             --gradient-boy: linear-gradient(135deg, #00C6FF 0%, #0072FF 100%);
             --gradient-girl: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
@@ -32,331 +35,109 @@
                 --card-border: rgba(255, 255, 255, 0.1);
                 --shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
                 --modal-bg: rgba(28, 28, 30, 0.85);
+                --segment-bg: rgba(118, 118, 128, 0.24);
             }
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            padding: 20px 20px 60px 20px;
-            transition: background-color 0.3s ease;
-            overflow-x: hidden;
+            background-color: var(--bg-color); color: var(--text-primary);
+            padding: 20px 20px 60px 20px; transition: background-color 0.3s ease; overflow-x: hidden;
         }
 
         /* 顶部标题区 */
-        header {
-            margin-top: 40px;
-            margin-bottom: 24px;
-        }
-
-        .date {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
-        }
-
-        /* 针对较长标题进行了字号自适应，调整为 24px 确保同行显示 */
-        h1 {
-            font-size: 24px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-        }
-
-        .avatar-group {
-            display: flex;
-            align-items: center;
-            flex-shrink: 0;
-        }
-
-        .avatar-group div {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            border-radius: 50%;
-            border: 3px solid var(--bg-color);
-        }
+        header { margin-top: 40px; margin-bottom: 24px; }
+        .date { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+        h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .avatar-group { display: flex; align-items: center; flex-shrink: 0; }
+        .avatar-group div { display: flex; align-items: center; justify-content: center; font-size: 16px; border-radius: 50%; border: 3px solid var(--bg-color); }
 
         /* 卡片通用样式 */
         .card {
-            background: var(--card-bg);
-            backdrop-filter: var(--blur);
-            -webkit-backdrop-filter: var(--blur);
-            border: 1px solid var(--card-border);
-            border-radius: 28px;
-            padding: 24px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
-            position: relative;
-            overflow: hidden;
+            background: var(--card-bg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+            border: 1px solid var(--card-border); border-radius: 28px; padding: 24px;
+            margin-bottom: 20px; box-shadow: var(--shadow); position: relative; overflow: hidden;
         }
 
-        /* 共享目标卡片 */
-        .shared-goal {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+        .shared-goal { display: flex; align-items: center; justify-content: space-between; }
+        .shared-info h3 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+        .shared-info p { font-size: 15px; color: var(--text-secondary); font-weight: 500; }
+        .highlight-text { background: var(--gradient-shared); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px; font-weight: 800; }
 
-        .shared-info h3 {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 6px;
-        }
+        /* 个人卡片 */
+        .person-card { cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .person-card:active { transform: scale(0.96); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); }
 
-        .shared-info p {
-            font-size: 15px;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
+        .person-header { display: flex; align-items: center; margin-bottom: 20px; }
+        .person-icon { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; margin-right: 16px; }
+        .bg-boy { background: var(--gradient-boy); }
+        .bg-girl { background: var(--gradient-girl); }
+        .person-name { font-size: 20px; font-weight: 700; }
+        .chevron-right { margin-left: auto; color: var(--text-secondary); font-weight: 600; font-size: 16px; opacity: 0.5; }
 
-        .highlight-text {
-            background: var(--gradient-shared);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 28px;
-            font-weight: 800;
-        }
+        .person-stats { display: flex; justify-content: space-between; align-items: flex-end; }
+        .stat-block { display: flex; flex-direction: column; z-index: 2; }
+        .stat-label { font-size: 13px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+        .stat-value { font-size: 32px; font-weight: 800; letter-spacing: -1px; display: flex; align-items: baseline; }
+        .stat-unit { font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-left: 4px; }
 
-        /* 个人详情卡片 (增强了点击交互的样式) */
-        .person-card {
-            cursor: pointer;
-            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
-        }
+        /* 历史记录按钮 */
+        .history-btn { font-size: 12px; font-weight: 700; display: inline-block; margin-top: 12px; padding: 6px 12px; border-radius: 12px; cursor: pointer; width: fit-content; transition: opacity 0.2s; }
+        .history-btn:active { opacity: 0.6; }
+        .boy-btn { color: #007AFF; background: rgba(0, 122, 255, 0.1); }
+        .girl-btn { color: #FF512F; background: rgba(255, 81, 47, 0.1); }
 
-        .person-card:active {
-            transform: scale(0.95);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        }
-
-        .person-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .person-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: white;
-            margin-right: 16px;
-        }
-
-        .bg-boy {
-            background: var(--gradient-boy);
-        }
-
-        .bg-girl {
-            background: var(--gradient-girl);
-        }
-
-        .person-name {
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        /* 指引图标 */
-        .chevron-right {
-            margin-left: auto;
-            color: var(--text-secondary);
-            font-weight: 600;
-            font-size: 16px;
-            opacity: 0.5;
-        }
-
-        .person-stats {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-        }
-
-        .stat-block {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .stat-label {
-            font-size: 13px;
-            color: var(--text-secondary);
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: 800;
-            letter-spacing: -1px;
-            display: flex;
-            align-items: baseline;
-        }
-
-        .stat-unit {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-left: 4px;
-        }
+        /* 缩略图表容器 (仅展示趋势，无交互) */
+        .mini-chart-wrapper { height: 50px; width: 100%; margin-top: 15px; position: relative; z-index: 2; border-radius: 12px; overflow: hidden; pointer-events: auto; }
 
         /* 环形进度条 */
-        .progress-ring {
-            position: relative;
-            width: 80px;
-            height: 80px;
-        }
+        .progress-ring { position: relative; width: 80px; height: 80px; z-index: 2; }
+        .progress-ring svg { transform: rotate(-90deg); }
+        .progress-ring circle { fill: none; stroke-width: 8; stroke-linecap: round; }
+        .progress-ring .track { stroke: rgba(142, 142, 147, 0.2); }
+        .progress-ring .progress { stroke-dasharray: 201; stroke-dashoffset: 201; transition: stroke-dashoffset 1.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .boy-progress { stroke: #0072FF; }
+        .girl-progress { stroke: #FF512F; }
+        .progress-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; font-weight: 800; }
 
-        .progress-ring svg {
-            transform: rotate(-90deg);
-        }
+        .tip-text { text-align: center; font-size: 13px; color: var(--text-secondary); font-weight: 600; margin-top: 10px; opacity: 0.7; }
 
-        .progress-ring circle {
-            fill: none;
-            stroke-width: 8;
-            stroke-linecap: round;
-        }
+        /* 弹窗样式 */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); z-index: 999; opacity: 0; visibility: hidden; transition: opacity 0.3s ease; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-sheet { position: absolute; bottom: 0; left: 0; right: 0; background: var(--modal-bg); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border-radius: 32px 32px 0 0; padding: 24px 24px 50px 24px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1); }
+        .modal-overlay.show .modal-sheet { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .modal-header button { background: none; border: none; font-size: 17px; font-weight: 600; color: #007AFF; cursor: pointer; }
+        .modal-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
 
-        .progress-ring .track {
-            stroke: rgba(142, 142, 147, 0.2);
-        }
+        /* 日期选择行 */
+        .date-row { display: flex; justify-content: space-between; align-items: center; background: var(--segment-bg); padding: 14px 18px; border-radius: 16px; margin-bottom: 24px; }
+        .date-row label { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+        .date-row input { background: transparent; border: none; outline: none; font-size: 16px; font-family: inherit; font-weight: 600; color: #007AFF; text-align: right; }
 
-        .progress-ring .progress {
-            stroke-dasharray: 201;
-            stroke-dashoffset: 201;
-            transition: stroke-dashoffset 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
+        .input-area { display: flex; justify-content: center; align-items: baseline; margin-bottom: 20px; }
+        .input-area input { width: 160px; font-size: 50px; font-weight: 800; text-align: center; background: transparent; border: none; color: var(--text-primary); outline: none; letter-spacing: -1px; }
+        .input-area .unit { font-size: 24px; font-weight: 600; color: var(--text-secondary); margin-left: 8px; }
 
-        .boy-progress {
-            stroke: #0072FF;
-        }
+        /* 二级界面（历史与完整图表）混合滚动区 */
+        .modal-scroll-area { max-height: 70vh; overflow-y: scroll; -webkit-overflow-scrolling: touch; padding-bottom: 20px; }
+        .modal-scroll-area::-webkit-scrollbar { display: none; }
+        
+        /* 完整大图表容器 */
+        .full-chart-wrapper { height: 200px; width: 100%; margin-bottom: 24px; padding-top: 10px; border-bottom: 1px solid rgba(142, 142, 147, 0.15); padding-bottom: 20px; }
 
-        .girl-progress {
-            stroke: #FF512F;
-        }
-
-        .progress-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 16px;
-            font-weight: 800;
-        }
-
-        /* 底部提示文字 */
-        .tip-text {
-            text-align: center;
-            font-size: 13px;
-            color: var(--text-secondary);
-            font-weight: 600;
-            margin-top: 10px;
-            opacity: 0.7;
-        }
-
-        /* 底部弹窗 Modal (iOS Bottom Sheet 风格) */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.4);
-            z-index: 999;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-        }
-
-        .modal-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal-sheet {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--modal-bg);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            border-radius: 32px 32px 0 0;
-            padding: 24px 24px 50px 24px;
-            transform: translateY(100%);
-            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
-        }
-
-        .modal-overlay.show .modal-sheet {
-            transform: translateY(0);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .modal-header button {
-            background: none;
-            border: none;
-            font-size: 17px;
-            font-weight: 600;
-            color: #007AFF;
-            cursor: pointer;
-        }
-
-        .modal-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        /* 输入框区域 */
-        .input-area {
-            display: flex;
-            justify-content: center;
-            align-items: baseline;
-            margin-bottom: 20px;
-        }
-
-        .input-area input {
-            width: 160px;
-            font-size: 50px;
-            font-weight: 800;
-            text-align: center;
-            background: transparent;
-            border: none;
-            color: var(--text-primary);
-            outline: none;
-            letter-spacing: -1px;
-        }
-
-        .input-area .unit {
-            font-size: 24px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-left: 8px;
-        }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 18px 0; border-bottom: 1px solid rgba(142, 142, 147, 0.15); }
+        .history-item:last-child { border-bottom: none; }
+        .history-date { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+        .history-weight-group { display: flex; align-items: center; gap: 12px; }
+        .history-trend { font-size: 13px; font-weight: 700; padding: 4px 8px; border-radius: 8px; }
+        .trend-down { background: rgba(52, 199, 89, 0.15); color: #34C759; } 
+        .trend-up { background: rgba(255, 59, 48, 0.15); color: #FF3B30; }   
+        .trend-flat { background: var(--segment-bg); color: var(--text-secondary); }
+        .history-weight { font-size: 18px; font-weight: 800; width: 70px; text-align: right; }
     </style>
 </head>
 
@@ -365,16 +146,14 @@
     <header>
         <div class="date" id="current-date">日期加载中...</div>
         <h1>
-            我们的减肥日记
+            GSK和WCX的减肥日记
             <div class="avatar-group">
                 <div style="background: var(--gradient-boy); width: 32px; height: 32px; z-index:2;">👦🏻</div>
-                <div style="background: var(--gradient-girl); width: 32px; height: 32px; margin-left:-12px; z-index:1;">
-                    👧🏻</div>
+                <div style="background: var(--gradient-girl); width: 32px; height: 32px; margin-left:-12px; z-index:1;">👧🏻</div>
             </div>
         </h1>
     </header>
 
-    <!-- 共享进度概览 -->
     <div class="card shared-goal">
         <div class="shared-info">
             <h3>情侣减脂挑战</h3>
@@ -383,18 +162,19 @@
         <div class="highlight-text" id="total-lost-text">-0.00kg</div>
     </div>
 
-    <!-- 男生数据卡片 (点击呼出弹窗编辑小甘体重) -->
+    <!-- 小甘的卡片 -->
     <div class="card person-card" onclick="openModalFor('boy')">
         <div class="person-header">
             <div class="person-icon bg-boy">👦🏻</div>
             <div class="person-name">小甘</div>
-            <div class="chevron-right">编辑 〉</div>
+            <div class="chevron-right">记录体重 〉</div>
         </div>
         <div class="person-stats">
             <div class="stat-block">
-                <div class="stat-label">当前体重</div>
+                <div class="stat-label">最新体重</div>
                 <div class="stat-value"><span id="boy-current-weight">--</span> <span class="stat-unit">kg</span></div>
                 <div class="stat-label" style="margin-top: 8px;">目标: <span id="boy-target-weight">--</span> kg</div>
+                <div class="history-btn boy-btn" onclick="openHistory('boy', event)">🕒 查看详情与历史</div>
             </div>
             <div class="progress-ring">
                 <svg width="80" height="80" viewBox="0 0 80 80">
@@ -404,20 +184,25 @@
                 <div class="progress-text" id="boy-percent-text" style="color: #0072FF;">0%</div>
             </div>
         </div>
+        <!-- 极其轻量的走势缩略图：点击它直接唤出完整的历史面板 -->
+        <div class="mini-chart-wrapper" onclick="openHistory('boy', event)">
+            <canvas id="boyTrendChart"></canvas>
+        </div>
     </div>
 
-    <!-- 女生数据卡片 (点击呼出弹窗编辑小王体重) -->
+    <!-- 小王的卡片 -->
     <div class="card person-card" onclick="openModalFor('girl')">
         <div class="person-header">
             <div class="person-icon bg-girl">👧🏻</div>
             <div class="person-name">小王</div>
-            <div class="chevron-right">编辑 〉</div>
+            <div class="chevron-right">记录体重 〉</div>
         </div>
         <div class="person-stats">
             <div class="stat-block">
-                <div class="stat-label">当前体重</div>
+                <div class="stat-label">最新体重</div>
                 <div class="stat-value"><span id="girl-current-weight">--</span> <span class="stat-unit">kg</span></div>
                 <div class="stat-label" style="margin-top: 8px;">目标: <span id="girl-target-weight">--</span> kg</div>
+                <div class="history-btn girl-btn" onclick="openHistory('girl', event)">🕒 查看详情与历史</div>
             </div>
             <div class="progress-ring">
                 <svg width="80" height="80" viewBox="0 0 80 80">
@@ -427,21 +212,27 @@
                 <div class="progress-text" id="girl-percent-text" style="color: #FF512F;">0%</div>
             </div>
         </div>
+        <div class="mini-chart-wrapper" onclick="openHistory('girl', event)">
+            <canvas id="girlTrendChart"></canvas>
+        </div>
     </div>
 
-    <!-- 提示文本 -->
-    <div class="tip-text">点击上方卡片即可记录体重</div>
+    <div class="tip-text">点击卡片上方打卡，点击图表缩略图查看走势图</div>
 
-    <!-- iOS 底层专属定制弹窗 -->
+    <!-- 记录体重的弹窗（带补登引擎） -->
     <div class="modal-overlay" id="weightModal">
         <div class="modal-sheet" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <button onclick="closeModal()" style="color: var(--text-secondary);">取消</button>
-                <div class="modal-title" id="modal-title">更新体重</div>
+                <button onclick="closeModal('weightModal')" style="color: var(--text-secondary);">取消</button>
+                <div class="modal-title" id="modal-title">体重记录</div>
                 <button onclick="saveWeight()" style="font-weight: 700;">保存</button>
             </div>
+            
+            <div class="date-row">
+                <label for="recordDate">记录日期</label>
+                <input type="date" id="recordDate">
+            </div>
 
-            <!-- 移除了分段选择器，直接显示输入框 -->
             <div class="input-area">
                 <input type="number" id="weightInput" inputmode="decimal" step="0.01" placeholder="0.00">
                 <span class="unit">kg</span>
@@ -449,42 +240,144 @@
         </div>
     </div>
 
+    <!-- 完整历史视图（带大号可交互图表） -->
+    <div class="modal-overlay" id="historyModal">
+        <div class="modal-sheet" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div style="width: 40px;"></div>
+                <div class="modal-title" id="history-title">历史记录</div>
+                <button onclick="closeModal('historyModal')" style="font-weight: 700;">完成</button>
+            </div>
+            <div class="modal-scroll-area">
+                <!-- 完整大尺寸图表展示位 -->
+                <div class="full-chart-wrapper">
+                    <canvas id="fullHistoryChart"></canvas>
+                </div>
+                <!-- 列表位 -->
+                <div id="history-list-container"></div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // --- 核心数据配置 ---
-        const defaultData = {
-            // 将小甘(boy)和小王(girl)的当前默认体重更新为了 67.90 和 55.75
-            boy: { startWeight: 71.00, targetWeight: 65.51, currentWeight: 67.90 },
-            girl: { startWeight: 59.00, targetWeight: 54.44, currentWeight: 55.75 }
-        };
+        function getTodayString() {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        }
+        
+        function formatDateDisplay(dateStr) {
+            const parts = dateStr.split('-');
+            if(parts.length === 3) return `${parseInt(parts[1])}.${parseInt(parts[2])}`;
+            return dateStr;
+        }
 
-        // 升级了本地缓存到 v3 避免受旧数据影响
-        let appData = JSON.parse(localStorage.getItem('coupleHealthData_v3')) || defaultData;
-        let selectedUser = 'boy'; // 用于标记当前打开弹窗的是谁
-
-        // 格式化函数：如果有两位小数则显示两位，如果只有一位则显示一位
         function formatWeight(val) {
             let num = parseFloat(val);
             if (Number.isInteger(num)) return num.toFixed(1);
             return num.toFixed(2).replace(/0$/, '');
         }
 
-        // --- 初始化应用 ---
+        // 升级到了 v8 版本，更新了男女完整的4月2日及其前置数据
+        const defaultData = {
+            boy: { 
+                startWeight: 71.00, targetWeight: 65.51, currentWeight: 67.10,
+                history:[
+                    { date: "2026-03-01", weight: 71.00 },
+                    { date: "2026-03-02", weight: 71.50 },
+                    { date: "2026-03-03", weight: 71.60 },
+                    { date: "2026-03-04", weight: 71.50 },
+                    { date: "2026-03-05", weight: 70.80 },
+                    { date: "2026-03-06", weight: 70.50 },
+                    { date: "2026-03-07", weight: 70.60 },
+                    { date: "2026-03-08", weight: 69.80 },
+                    { date: "2026-03-09", weight: 70.40 },
+                    { date: "2026-03-10", weight: 69.90 },
+                    { date: "2026-03-11", weight: 69.90 },
+                    { date: "2026-03-12", weight: 69.90 },
+                    { date: "2026-03-13", weight: 69.50 },
+                    { date: "2026-03-14", weight: 68.00 },
+                    { date: "2026-03-15", weight: 69.20 },
+                    { date: "2026-03-16", weight: 69.80 },
+                    { date: "2026-03-17", weight: 69.70 },
+                    { date: "2026-03-18", weight: 69.90 },
+                    { date: "2026-03-19", weight: 70.00 },
+                    { date: "2026-03-20", weight: 69.00 },
+                    { date: "2026-03-21", weight: 68.50 },
+                    { date: "2026-03-22", weight: 68.20 }, 
+                    { date: "2026-03-23", weight: 68.50 },
+                    { date: "2026-03-24", weight: 67.70 },
+                    { date: "2026-03-25", weight: 67.90 },
+                    { date: "2026-03-26", weight: 67.60 },                  
+                    { date: "2026-03-27", weight: 67.20 },
+                    { date: "2026-03-30", weight: 68.00 },
+                    { date: "2026-03-31", weight: 67.50 },
+                    { date: "2026-04-01", weight: 67.30 },
+                    { date: "2026-04-02", weight: 67.10 }
+                ]
+            },
+            girl: { 
+                startWeight: 59.00, targetWeight: 54.44, currentWeight: 55.30,
+                history:[
+                    { date: "2026-03-01", weight: 59.00 },
+                    { date: "2026-03-02", weight: 58.90 },
+                    { date: "2026-03-03", weight: 58.80 },
+                    { date: "2026-03-04", weight: 58.60 },
+                    { date: "2026-03-05", weight: 58.20 },
+                    { date: "2026-03-06", weight: 58.30 },
+                    { date: "2026-03-07", weight: 58.70 },
+                    { date: "2026-03-08", weight: 58.20 },
+                    { date: "2026-03-09", weight: 58.40 },
+                    { date: "2026-03-10", weight: 58.55 },
+                    { date: "2026-03-11", weight: 57.70 },
+                    { date: "2026-03-12", weight: 57.60 },
+                    { date: "2026-03-13", weight: 56.70 },
+                    { date: "2026-03-14", weight: 57.00 },
+                    { date: "2026-03-15", weight: 57.75 },
+                    { date: "2026-03-16", weight: 57.10 },
+                    { date: "2026-03-17", weight: 57.20 },
+                    { date: "2026-03-18", weight: 56.75 },
+                    { date: "2026-03-19", weight: 56.30 },
+                    { date: "2026-03-20", weight: 55.60 },
+                    { date: "2026-03-21", weight: 55.60 },
+                    { date: "2026-03-22", weight: 56.05 },
+                    { date: "2026-03-23", weight: 56.15 },
+                    { date: "2026-03-24", weight: 56.40 },
+                    { date: "2026-03-25", weight: 55.75 },
+                    { date: "2026-03-26", weight: 55.30 },
+                    { date: "2026-03-27", weight: 55.00 },
+                    { date: "2026-03-30", weight: 56.15 },
+                    { date: "2026-03-31", weight: 55.75 },
+                    { date: "2026-04-01", weight: 55.65 },
+                    { date: "2026-04-02", weight: 55.30 }
+                ]
+            }
+        };
+
+        // 数据 v8 核心
+        let appData = JSON.parse(localStorage.getItem('coupleHealthData_v8')) || defaultData;
+        let selectedUser = 'boy'; 
+        let boyMiniChart = null; 
+        let girlMiniChart = null;
+        let fullDetailChart = null; 
+
         window.onload = () => {
             setCurrentDate();
             renderUI();
-
-            // 点击遮罩层关闭弹窗
-            document.getElementById('weightModal').addEventListener('click', closeModal);
+            document.getElementById('weightModal').addEventListener('click', () => closeModal('weightModal'));
+            document.getElementById('historyModal').addEventListener('click', () => closeModal('historyModal'));
+            
+            document.getElementById('recordDate').addEventListener('change', (e) => {
+                updateWeightInputForDate(e.target.value);
+            });
         };
 
         function setCurrentDate() {
             const now = new Date();
-            const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-            document.getElementById('current-date').textContent =
-                `${now.getMonth() + 1}月${now.getDate()}日 ${days[now.getDay()]}`;
+            const days =['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            document.getElementById('current-date').textContent = `${now.getMonth() + 1}月${now.getDate()}日 ${days[now.getDay()]}`;
+            document.getElementById('recordDate').max = getTodayString();
         }
 
-        // --- 核心更新逻辑 ---
         function renderUI() {
             const boy = appData.boy;
             const girl = appData.girl;
@@ -494,31 +387,24 @@
             document.getElementById('girl-current-weight').textContent = formatWeight(girl.currentWeight);
             document.getElementById('girl-target-weight').textContent = formatWeight(girl.targetWeight);
 
-            // 计算进度百分比
             const boyPercent = calculatePercent(boy);
             const girlPercent = calculatePercent(girl);
 
             document.getElementById('boy-percent-text').textContent = boyPercent + '%';
             document.getElementById('girl-percent-text').textContent = girlPercent + '%';
 
-            // 更新圆环动画
             updateRing('boy-circle', boyPercent);
             updateRing('girl-circle', girlPercent);
 
-            // 更新顶部共享进度
             const totalGoal = (boy.startWeight - boy.targetWeight) + (girl.startWeight - girl.targetWeight);
             const totalLost = (boy.startWeight - boy.currentWeight) + (girl.startWeight - girl.currentWeight);
 
             document.getElementById('total-goal-text').textContent = formatWeight(totalGoal) + 'kg';
+            document.getElementById('total-lost-text').textContent = (totalLost > 0 ? '-' : '') + formatWeight(totalLost) + 'kg';
 
-            if (totalLost > 0) {
-                document.getElementById('total-lost-text').textContent = '-' + formatWeight(totalLost) + 'kg';
-            } else {
-                document.getElementById('total-lost-text').textContent = '0.0kg';
-            }
+            renderMiniCharts();
 
-            // 数据持久化保存
-            localStorage.setItem('coupleHealthData_v3', JSON.stringify(appData));
+            localStorage.setItem('coupleHealthData_v8', JSON.stringify(appData));
         }
 
         function calculatePercent(user) {
@@ -531,60 +417,214 @@
 
         function updateRing(elementId, percent) {
             const circle = document.getElementById(elementId);
-            const circumference = 201;
-            const offset = circumference - (percent / 100) * circumference;
-            setTimeout(() => {
-                circle.style.strokeDashoffset = offset;
-            }, 50);
+            const offset = 201 - (percent / 100) * 201;
+            setTimeout(() => { circle.style.strokeDashoffset = offset; }, 50);
         }
 
-        // --- 弹窗交互逻辑 ---
+        // --- 绘制极致精简的缩略图 (无轴、无文字) ---
+        function renderMiniCharts() {
+            const miniOptions = {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                interaction: { mode: null }, 
+                scales: { x: { display: false }, y: { display: false } },
+                layout: { padding: 0 }
+            };
 
-        // 专属唤起：点击不同卡片，弹窗标题和输入框内容自动定制
-        function openModalFor(user) {
-            selectedUser = user;
-
-            // 动态修改弹窗标题
-            const modalTitle = document.getElementById('modal-title');
-            if (user === 'boy') {
-                modalTitle.textContent = '👦🏻 更新小甘的体重';
+            const boyHistory = appData.boy.history;
+            if(boyMiniChart) {
+                boyMiniChart.data.labels = boyHistory.map(r => r.date);
+                boyMiniChart.data.datasets[0].data = boyHistory.map(r => r.weight);
+                boyMiniChart.update();
             } else {
-                modalTitle.textContent = '👧🏻 更新小王的体重';
+                const ctxBoy = document.getElementById('boyTrendChart').getContext('2d');
+                let gradientBoy = ctxBoy.createLinearGradient(0, 0, 0, 50);
+                gradientBoy.addColorStop(0, 'rgba(0, 114, 255, 0.25)');
+                gradientBoy.addColorStop(1, 'rgba(0, 114, 255, 0)');
+
+                boyMiniChart = new Chart(ctxBoy, {
+                    type: 'line',
+                    data: {
+                        labels: boyHistory.map(r => r.date),
+                        datasets:[{
+                            data: boyHistory.map(r => r.weight), borderColor: '#0072FF', backgroundColor: gradientBoy,
+                            borderWidth: 2, tension: 0.4, fill: true, pointRadius: 0 
+                        }]
+                    },
+                    options: miniOptions
+                });
             }
 
-            // 填入对应用户的当前体重
-            document.getElementById('weightInput').value = formatWeight(appData[user].currentWeight);
+            const girlHistory = appData.girl.history;
+            if(girlMiniChart) {
+                girlMiniChart.data.labels = girlHistory.map(r => r.date);
+                girlMiniChart.data.datasets[0].data = girlHistory.map(r => r.weight);
+                girlMiniChart.update();
+            } else {
+                const ctxGirl = document.getElementById('girlTrendChart').getContext('2d');
+                let gradientGirl = ctxGirl.createLinearGradient(0, 0, 0, 50);
+                gradientGirl.addColorStop(0, 'rgba(255, 81, 47, 0.25)');
+                gradientGirl.addColorStop(1, 'rgba(255, 81, 47, 0)');
 
-            // 展示弹窗
+                girlMiniChart = new Chart(ctxGirl, {
+                    type: 'line',
+                    data: {
+                        labels: girlHistory.map(r => r.date),
+                        datasets:[{
+                            data: girlHistory.map(r => r.weight), borderColor: '#FF512F', backgroundColor: gradientGirl,
+                            borderWidth: 2, tension: 0.4, fill: true, pointRadius: 0
+                        }]
+                    },
+                    options: miniOptions
+                });
+            }
+        }
+
+        // --- 绘制二级页面的大尺寸全功能交互图表 ---
+        function renderFullDetailChart(user) {
+            const history = [...appData[user].history].sort((a,b) => new Date(a.date) - new Date(b.date));
+            const labels = history.map(r => formatDateDisplay(r.date));
+            const data = history.map(r => r.weight);
+            const color = user === 'boy' ? '#0072FF' : '#FF512F';
+            const gradColor = user === 'boy' ? 'rgba(0,114,255,0.2)' : 'rgba(255,81,47,0.2)';
+
+            const ctx = document.getElementById('fullHistoryChart').getContext('2d');
+            let gradient = ctx.createLinearGradient(0,0,0,200);
+            gradient.addColorStop(0, gradColor);
+            gradient.addColorStop(1, 'rgba(255,255,255,0)');
+
+            if(fullDetailChart) fullDetailChart.destroy();
+
+            fullDetailChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets:[{
+                        label: '体重(kg)',
+                        data: data, borderColor: color, backgroundColor: gradient,
+                        borderWidth: 3, tension: 0.4, fill: true, pointRadius: 3, pointHoverRadius: 7, spanGaps: true
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false }, 
+                        tooltip: { enabled: true, backgroundColor:'rgba(0,0,0,0.8)', displayColors: false, padding: 10, cornerRadius: 8, titleFont: {size: 13}, bodyFont: {size: 15, weight: 'bold'} } 
+                    },
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                        y: { grid: { color: 'rgba(142,142,147,0.15)', borderDash:[5,5] }, border: { display: false }, ticks: { font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        function updateWeightInputForDate(dateStr) {
+            const userHistory = appData[selectedUser].history;
+            const record = userHistory.find(r => r.date === dateStr);
+            if (record) {
+                document.getElementById('weightInput').value = formatWeight(record.weight);
+            } else {
+                document.getElementById('weightInput').value = '';
+            }
+        }
+
+        function openModalFor(user) {
+            selectedUser = user;
+            const today = getTodayString();
+            document.getElementById('modal-title').textContent = user === 'boy' ? '👦🏻 记录小甘的体重' : '👧🏻 记录小王的体重';
+            document.getElementById('recordDate').value = today;
+            updateWeightInputForDate(today);
+            
+            if (document.getElementById('weightInput').value === '') {
+                document.getElementById('weightInput').value = formatWeight(appData[user].currentWeight);
+            }
             document.getElementById('weightModal').classList.add('show');
-
-            // 自动聚焦输入框方便手机端唤起数字键盘
             setTimeout(() => { document.getElementById('weightInput').focus(); }, 100);
         }
 
-        function closeModal() {
-            document.getElementById('weightModal').classList.remove('show');
-            document.getElementById('weightInput').blur();
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('show');
+            if(modalId === 'weightModal') document.getElementById('weightInput').blur();
         }
 
         function saveWeight() {
             const inputVal = parseFloat(document.getElementById('weightInput').value);
-
+            const selectedDate = document.getElementById('recordDate').value;
+            
             if (isNaN(inputVal) || inputVal <= 0 || inputVal > 300) {
-                alert('请输入有效体重数据哦！');
-                return;
+                alert('请输入有效体重数据哦！'); return;
+            }
+            if (!selectedDate) {
+                alert('请选择有效的日期！'); return;
             }
 
-            // 直接更新当前选中成员的“目前体重”
-            appData[selectedUser].currentWeight = inputVal;
+            const user = appData[selectedUser];
+            const existingRecord = user.history.find(r => r.date === selectedDate);
+            if (existingRecord) {
+                existingRecord.weight = inputVal;
+            } else {
+                user.history.push({ date: selectedDate, weight: inputVal });
+            }
 
-            closeModal();
-            // 延迟重绘画 UI，匹配弹窗收起的优雅动画
-            setTimeout(() => {
-                renderUI();
-            }, 300);
+            user.history.sort((a, b) => new Date(a.date) - new Date(b.date));
+            user.currentWeight = user.history[user.history.length - 1].weight;
+
+            closeModal('weightModal');
+            setTimeout(() => { renderUI(); }, 300);
+        }
+
+        // 打开带大图表的历史面板
+        function openHistory(user, event) {
+            event.stopPropagation(); 
+            
+            document.getElementById('history-title').textContent = user === 'boy' ? '👦🏻 小甘的体重详情' : '👧🏻 小王的体重详情';
+            
+            // 渲染全功能图表
+            renderFullDetailChart(user);
+
+            const listContainer = document.getElementById('history-list-container');
+            listContainer.innerHTML = ''; 
+
+            const history =[...appData[user].history].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const displayItems =[];
+
+            for (let i = 0; i < history.length; i++) {
+                const current = history[i];
+                let diff = 0;
+                let isFirst = (i === 0);
+                if (!isFirst) diff = current.weight - history[i-1].weight;
+                displayItems.push({ ...current, diff, isFirst });
+            }
+
+            displayItems.reverse().forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+
+                let trendHTML = '';
+                if (item.isFirst) {
+                    trendHTML = `<div class="history-trend trend-flat">起点数据</div>`;
+                } else if (item.diff < 0) {
+                    trendHTML = `<div class="history-trend trend-down">↓ ${Math.abs(item.diff).toFixed(2)}</div>`;
+                } else if (item.diff > 0) {
+                    trendHTML = `<div class="history-trend trend-up">↑ ${Math.abs(item.diff).toFixed(2)}</div>`;
+                } else {
+                    trendHTML = `<div class="history-trend trend-flat">持平</div>`;
+                }
+
+                div.innerHTML = `
+                    <div class="history-date">${formatDateDisplay(item.date)}</div>
+                    <div class="history-weight-group">
+                        ${trendHTML}
+                        <div class="history-weight">${formatWeight(item.weight)} <span style="font-size:12px;color:var(--text-secondary);">kg</span></div>
+                    </div>
+                `;
+                listContainer.appendChild(div);
+            });
+
+            document.getElementById('historyModal').classList.add('show');
         }
     </script>
 </body>
-
 </html>
