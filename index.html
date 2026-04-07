@@ -48,7 +48,7 @@
         }
 
         /* 顶部标题区 */
-        header { margin-top:10px; margin-bottom: 24px; }
+        header { margin-top: 40px; margin-bottom: 24px; }
         .date { font-size: 14px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
         h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         .avatar-group { display: flex; align-items: center; flex-shrink: 0; }
@@ -146,7 +146,7 @@
     <header>
         <div class="date" id="current-date">日期加载中...</div>
         <h1>
-            我们的减肥日记
+            GSK和WCX的减肥日记
             <div class="avatar-group">
                 <div style="background: var(--gradient-boy); width: 32px; height: 32px; z-index:2;">👦🏻</div>
                 <div style="background: var(--gradient-girl); width: 32px; height: 32px; margin-left:-12px; z-index:1;">👧🏻</div>
@@ -277,10 +277,10 @@
             return num.toFixed(2).replace(/0$/, '');
         }
 
-        // 升级到了 v8 版本，更新了男女完整的4月2日及其前置数据
+        // 升级到了 v9 版本，追加了4月3日至4月7日的数据
         const defaultData = {
             boy: { 
-                startWeight: 71.00, targetWeight: 65.51, currentWeight: 67.10,
+                startWeight: 71.00, targetWeight: 65.51, currentWeight: 67.30,
                 history:[
                     { date: "2026-03-01", weight: 71.00 },
                     { date: "2026-03-02", weight: 71.50 },
@@ -312,16 +312,16 @@
                     { date: "2026-03-30", weight: 68.00 },
                     { date: "2026-03-31", weight: 67.50 },
                     { date: "2026-04-01", weight: 67.30 },
-                    { date: "2026-04-02", weight: 67.10 }，
-                    { date: "2026-04-03", weight: 67.00 }，
-                    { date: "2026-04-04", weight: 67.00 }，
-                    { date: "2026-04-05", weight: 65.70 }，
-                    { date: "2026-04-06", weight: 67.20 }，
+                    { date: "2026-04-02", weight: 67.10 },
+                    { date: "2026-04-03", weight: 67.00 },
+                    { date: "2026-04-04", weight: 67.00 },
+                    { date: "2026-04-05", weight: 65.70 },
+                    { date: "2026-04-06", weight: 67.20 },
                     { date: "2026-04-07", weight: 67.30 }
                 ]
             },
             girl: { 
-                startWeight: 59.00, targetWeight: 54.44, currentWeight: 55.30,
+                startWeight: 59.00, targetWeight: 54.44, currentWeight: 55.10,
                 history:[
                     { date: "2026-03-01", weight: 59.00 },
                     { date: "2026-03-02", weight: 58.90 },
@@ -353,18 +353,18 @@
                     { date: "2026-03-30", weight: 56.15 },
                     { date: "2026-03-31", weight: 55.75 },
                     { date: "2026-04-01", weight: 55.65 },
-                    { date: "2026-04-02", weight: 55.30 }，
-                    { date: "2026-04-03", weight: 55.30 }，
-                    { date: "2026-04-04", weight: 54.75 }，
-                    { date: "2026-04-05", weight: 54.75 }，
-                    { date: "2026-04-06", weight: 54.90 }，
+                    { date: "2026-04-02", weight: 55.30 },
+                    { date: "2026-04-03", weight: 55.30 },
+                    { date: "2026-04-04", weight: 54.75 },
+                    { date: "2026-04-05", weight: 54.75 },
+                    { date: "2026-04-06", weight: 54.90 },
                     { date: "2026-04-07", weight: 55.10 }
                 ]
             }
         };
 
-        // 数据 v8 核心
-        let appData = JSON.parse(localStorage.getItem('coupleHealthData_v8')) || defaultData;
+        // 数据 v9 核心
+        let appData = JSON.parse(localStorage.getItem('coupleHealthData_v9')) || defaultData;
         let selectedUser = 'boy'; 
         let boyMiniChart = null; 
         let girlMiniChart = null;
@@ -414,7 +414,7 @@
 
             renderMiniCharts();
 
-            localStorage.setItem('coupleHealthData_v8', JSON.stringify(appData));
+            localStorage.setItem('coupleHealthData_v9', JSON.stringify(appData));
         }
 
         function calculatePercent(user) {
