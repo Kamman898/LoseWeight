@@ -368,7 +368,7 @@
         };
 
         // 数据 v9 核心
-        let appData = JSON.parse(localStorage.getItem('coupleHealthData_v11')) || defaultData;
+        let appData = JSON.parse(localStorage.getItem('coupleHealthData_v10')) || defaultData;
         let selectedUser = 'boy'; 
         let boyMiniChart = null; 
         let girlMiniChart = null;
@@ -418,7 +418,7 @@
 
             renderMiniCharts();
 
-            localStorage.setItem('coupleHealthData_v11', JSON.stringify(appData));
+            localStorage.setItem('coupleHealthData_v10', JSON.stringify(appData));
         }
 
         function calculatePercent(user) {
