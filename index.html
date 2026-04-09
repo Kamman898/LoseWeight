@@ -6,7 +6,6 @@
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <title>情侣健康记录</title>
-    <!-- 引入强大的 Chart.js 图表库 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* CSS 变量：支持明暗模式与iOS色彩系统 */
@@ -162,7 +161,6 @@
         <div class="highlight-text" id="total-lost-text">-0.00kg</div>
     </div>
 
-    <!-- 小甘的卡片 -->
     <div class="card person-card" onclick="openModalFor('boy')">
         <div class="person-header">
             <div class="person-icon bg-boy">👦🏻</div>
@@ -184,13 +182,11 @@
                 <div class="progress-text" id="boy-percent-text" style="color: #0072FF;">0%</div>
             </div>
         </div>
-        <!-- 极其轻量的走势缩略图：点击它直接唤出完整的历史面板 -->
         <div class="mini-chart-wrapper" onclick="openHistory('boy', event)">
             <canvas id="boyTrendChart"></canvas>
         </div>
     </div>
 
-    <!-- 小王的卡片 -->
     <div class="card person-card" onclick="openModalFor('girl')">
         <div class="person-header">
             <div class="person-icon bg-girl">👧🏻</div>
@@ -219,7 +215,6 @@
 
     <div class="tip-text">点击卡片上方打卡，点击图表缩略图查看走势图</div>
 
-    <!-- 记录体重的弹窗（带补登引擎） -->
     <div class="modal-overlay" id="weightModal">
         <div class="modal-sheet" onclick="event.stopPropagation()">
             <div class="modal-header">
@@ -240,7 +235,6 @@
         </div>
     </div>
 
-    <!-- 完整历史视图（带大号可交互图表） -->
     <div class="modal-overlay" id="historyModal">
         <div class="modal-sheet" onclick="event.stopPropagation()">
             <div class="modal-header">
@@ -249,11 +243,9 @@
                 <button onclick="closeModal('historyModal')" style="font-weight: 700;">完成</button>
             </div>
             <div class="modal-scroll-area">
-                <!-- 完整大尺寸图表展示位 -->
                 <div class="full-chart-wrapper">
                     <canvas id="fullHistoryChart"></canvas>
                 </div>
-                <!-- 列表位 -->
                 <div id="history-list-container"></div>
             </div>
         </div>
@@ -375,8 +367,18 @@
         let fullDetailChart = null; 
 
         window.onload = () => {
+            // 👇 新增：每次页面加载时，自动校准最新体重为历史记录中的最后一条
+            ['boy', 'girl'].forEach(user => {
+                let history = appData[user].history;
+                if (history.length > 0) {
+                    history.sort((a, b) => new Date(a.date) - new Date(b.date));
+                    appData[user].currentWeight = history[history.length - 1].weight;
+                }
+            });
+
             setCurrentDate();
             renderUI();
+            
             document.getElementById('weightModal').addEventListener('click', () => closeModal('weightModal'));
             document.getElementById('historyModal').addEventListener('click', () => closeModal('historyModal'));
             
@@ -418,6 +420,7 @@
 
             renderMiniCharts();
 
+            // 这里会将修复后的最新 currentWeight 保存回 localStorage，这样旧缓存就自动治愈了
             localStorage.setItem('coupleHealthData_v10', JSON.stringify(appData));
         }
 
